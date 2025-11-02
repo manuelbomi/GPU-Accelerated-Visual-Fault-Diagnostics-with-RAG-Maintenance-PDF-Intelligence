@@ -1,4 +1,4 @@
-# Enterprise Image Fault Diagnosis & Visual Similarity Search <sub>(Vision AI + FAISS-GPU + LLM PDF Knowledge Retrieval for Industrial Defect Root-Cause Analysis)</sub>
+# Enterprise GPU-Accelerated Visual Fault Diagnostics with RAG & Maintenance PDF Intelligence <sub>(Vision AI + FAISS-GPU + LLM PDF Knowledge Retrieval for Industrial Defect Root-Cause Analysis)</sub>
 
 ## Overview
 
@@ -71,3 +71,91 @@ enterprise-image-fault-diagnosis-rag-gpu/
 │   └── streamlit_visual_search.py
 
 ```
+
+---
+
+## Quickstart (GPU Required)
+#### <ins>Install NVIDIA drivers + CUDA</ins>
+
+```python
+sudo apt install nvidia-driver-530 nvidia-cuda-toolkit
+```
+
+#### <ins>Install Python deps</ins>
+```python
+pip install -r requirements.txt
+```
+
+#### <ins>Train + Build Index + Build PDF Vector Store</ins>
+
+```python
+python src/train_classifier.py
+python src/extract_embeddings.py
+python src/build_faiss_index.py
+python src/pdf_ingest.py
+```
+
+#### <insRun Streamlit App</ins>
+```python
+streamlit run app/streamlit_visual_search.py
+```
+
+---
+
+##  Enterprise Use-Cases
+
+| Industry | Use Case |
+|----------|----------|
+| Automotive | Visual quality inspection + service manual lookups |
+| Aerospace | Turbine/airframe defect search + maintenance docs QA |
+| Semiconductor | Wafer anomaly classification + tool maintenance PDFs |
+| Oil & Gas | Pipeline corrosion recognition + repair SOP linking |
+| OEM & Factory QA | AI visual assistant for line-side technicians |
+
+---
+
+## Enterprise-Ready Capabilities
+
+| Capability | Description |
+|------------|-------------|
+| RAG w/ PDF manuals | Knowledge-augmented troubleshooting |
+| GPU inference | Real-time similarity search + CNN embeddings |
+| Air-gapped support | No cloud dependency required |
+| Scalable | Modular services for MLOps pipelines |
+| Extensible | Swap VGG16 → ViT / YOLO / EfficientNet |
+
+---
+
+## Roadmap
+| Feature | Status |
+|---------|--------|
+|  CNN Fault Classifier | Done |
+|  FAISS-GPU Similarity Search | Done |
+|  PDF Fault Ingest + Embeddings | Done |
+|  RAG Query System | Done |
+|  REST API / FastAPI microservice | Planned |
+|  Helm + EKS GPU deployment | Planned |
+|  YOLO defect localization | Planned |
+
+---
+
+## Summary
+
+#### This repository demonstrates a real-world enterprise AI system combining:
+
+- Computer vision defect detection
+
+- GPU-accelerated similarity search
+
+- PDF maintenance manual intelligence
+
+- RAG + LLM technician assistant
+- 
+
+<ins>Perfect for</ins>:
+
+- Manufacturing AI innovation teams
+
+- Maintenance automation & smart factory projects
+
+- Industrial ML upskilling & PoC deployments
