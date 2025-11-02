@@ -18,7 +18,7 @@ Designed for digital factories, predictive maintenance teams, and AI-augmented m
 
 ---
 
-## ⚙️ Key Features
+##  Key Features
 
  **GPU-accelerated training & inference** (TensorFlow-GPU, FAISS-GPU)  
  **Image fault classification + similar-image retrieval**  
@@ -46,3 +46,28 @@ G --> H[Root Cause + Mitigation Plan + Steps]
 ```
 
 ### Repository Structure
+
+```python
+enterprise-image-fault-diagnosis-rag-gpu/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   ├── faiss_index/
+│   └── fault_reports/
+│       ├── pdfs/
+│       └── vector_store/
+│
+├── src/
+│   ├── config.py
+│   ├── extract_embeddings.py
+│   ├── train_classifier.py
+│   ├── build_faiss_index.py
+│   ├── query_similar_images.py
+│   ├── pdf_ingest.py
+│   ├── rag_query.py
+│
+├── app/
+│   └── streamlit_visual_search.py
+
+```
