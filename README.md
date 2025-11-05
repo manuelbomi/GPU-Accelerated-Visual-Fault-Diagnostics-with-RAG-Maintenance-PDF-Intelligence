@@ -95,7 +95,7 @@ python src/build_faiss_index.py
 python src/pdf_ingest.py
 ```
 
-#### <insRun Streamlit App</ins>
+#### <ins>Run Streamlit App</ins>
 ```python
 streamlit run app/streamlit_visual_search.py
 ```
