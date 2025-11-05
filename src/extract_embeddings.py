@@ -1,3 +1,4 @@
+# @Emmanuel Oyekanlu
 """Extract image embeddings using VGG16 and save them to disk.
 
 Usage:
