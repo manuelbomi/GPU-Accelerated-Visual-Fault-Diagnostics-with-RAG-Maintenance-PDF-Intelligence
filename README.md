@@ -32,7 +32,9 @@ Designed for digital factories, predictive maintenance teams, and AI-augmented m
 ##  High-Level Architecture
 
 ```mermaid
+
 flowchart LR
+
 A[Upload Part Image] --> B[GPU Preprocessing]
 B --> C[VGG16 CNN Embedding Extraction]
 C --> D[FAISS-GPU Similarity Search]
