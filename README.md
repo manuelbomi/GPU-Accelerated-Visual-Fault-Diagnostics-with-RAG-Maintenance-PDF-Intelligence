@@ -31,7 +31,7 @@ Designed for digital factories, predictive maintenance teams, and AI-augmented m
 
 ##  High-Level Architecture
 
-```python
+```mermaid
 flowchart LR
 A[Upload Part Image] --> B[GPU Preprocessing]
 B --> C[VGG16 CNN Embedding Extraction]
@@ -43,6 +43,7 @@ F --> G[LLM RAG Engine]
 G --> H[Root Cause + Mitigation Plan + Steps]
 
 4. (Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.
+
 ```
 
 ### Repository Structure
