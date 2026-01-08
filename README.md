@@ -43,10 +43,9 @@ D --> E[Similar Historical Fault Images + Metadata]
 E --> F[PDF Fault Manuals Vector Store]
 F --> G[LLM RAG Engine]
 G --> H[Root Cause + Mitigation Plan + Steps]
-
-
 ```
-4. (Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.
+
+**(Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.**
 
 
 ### Repository Structure
