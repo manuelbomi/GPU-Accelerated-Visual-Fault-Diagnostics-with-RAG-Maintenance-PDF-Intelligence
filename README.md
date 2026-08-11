@@ -43,6 +43,21 @@ D --> E[Similar Historical Fault Images + Metadata]
 E --> F[PDF Fault Manuals Vector Store]
 F --> G[LLM RAG Engine]
 G --> H[Root Cause + Mitigation Plan + Steps]
+
+
+```
+
+```mermaid
+%%{init: {'flowchart': {'curve': 'basis', 'padding': 20, 'nodeSpacing': 80, 'rankSpacing': 100, 'width': 300}}}%%
+flowchart TD
+    A[Upload Part Image] --> B[GPU Preprocessing]
+    B --> C[VGG16 CNN Embedding Extraction]
+    C --> D[FAISS-GPU Similarity Search]
+    D --> E[Similar Historical Fault Images + Metadata]
+    E --> F[PDF Fault Manuals Vector Store]
+    F --> G[LLM RAG Engine]
+    G --> H[Root Cause + Mitigation Plan + Steps]
+
 ```
 
 **(Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.**
