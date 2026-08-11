@@ -47,6 +47,7 @@ G --> H[Root Cause + Mitigation Plan + Steps]
 
 ```
 
+<div style="width: 100%; overflow: auto; white-space: nowrap;">
 ```mermaid
 %%{init: {'flowchart': {'curve': 'basis', 'padding': 20, 'nodeSpacing': 80, 'rankSpacing': 100, 'width': 300}}}%%
 flowchart TD
@@ -59,6 +60,10 @@ flowchart TD
     G --> H[Root Cause + Mitigation Plan + Steps]
 
 ```
+</div>
+
+
+
 
 **(Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.**
 
