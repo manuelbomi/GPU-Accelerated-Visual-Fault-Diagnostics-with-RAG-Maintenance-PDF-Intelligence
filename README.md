@@ -48,7 +48,8 @@ G --> H[Root Cause + Mitigation Plan + Steps]
 ```
 
 <div style="width: 100%; overflow: auto; white-space: nowrap;">
-```mermaid
+ 
+
 %%{init: {'flowchart': {'curve': 'basis', 'padding': 20, 'nodeSpacing': 80, 'rankSpacing': 100, 'width': 300}}}%%
 flowchart TD
     A[Upload Part Image] --> B[GPU Preprocessing]
@@ -59,7 +60,7 @@ flowchart TD
     F --> G[LLM RAG Engine]
     G --> H[Root Cause + Mitigation Plan + Steps]
 
-```
+
 </div>
 
 
