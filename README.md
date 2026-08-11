@@ -33,7 +33,7 @@ Designed for digital factories, predictive maintenance teams, and AI-augmented m
 
 ```mermaid
 
-flowchart LR
+flowchart TD
 
 A[Upload Part Image] --> B[GPU Preprocessing]
 B --> C[VGG16 CNN Embedding Extraction]
