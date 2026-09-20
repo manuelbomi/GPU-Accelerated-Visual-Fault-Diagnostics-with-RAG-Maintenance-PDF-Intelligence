@@ -18,6 +18,21 @@ Designed for digital factories, predictive maintenance teams, and AI-augmented m
 
 ---
 
+## Screenshots
+
+The [React/TypeScript frontend](frontend/README.md)'s **AI Diagnosis** tab — classifier
+prediction with a confidence meter, visually similar historical faults, and
+retrieved maintenance-manual passages, all from one uploaded image:
+
+![AI Diagnosis: predicted fault label and confidence, similar historical images, and retrieved maintenance passages](docs/images/frontend_ai_diagnosis.png)
+
+The **Visual Search** tab — pure image-similarity retrieval, no classifier
+or RAG involved, with a similarity score per result:
+
+![Visual Search: similar images to the uploaded query with similarity scores](docs/images/frontend_visual_search.png)
+
+---
+
 ## Key Features
 
 - **GPU-accelerated training & inference** (TensorFlow-GPU, FAISS-GPU)
