@@ -2,112 +2,162 @@
 
 ## Overview
 
-
-#### This system implements an **end-to-end intelligent fault analysis pipeline** for enterprise and industrial manufacturing environments:
+This system implements an **end-to-end intelligent fault analysis pipeline** for enterprise and industrial manufacturing environments:
 
 | Layer | Capability |
 |---|---|
- Vision | VGG16 / TF-GPU image fault classifier  
- Search | FAISS-GPU similarity search for historical defective parts  
- Knowledge | PDF maintenance instructions + RAG for intelligent troubleshooting  
- AI Assistant | LLM answers using enterprise fault documentation  
- UI | Streamlit fault diagnosis assistant  
- Equipped for | NVIDIA GPUs, CUDA, Enterprise workloads  
+| Vision | VGG16 / TF-GPU image fault classifier |
+| Search | FAISS-GPU similarity search for historical defective parts |
+| Knowledge | PDF maintenance instructions + RAG for intelligent troubleshooting |
+| AI Assistant | LLM answers using enterprise fault documentation |
+| API | FastAPI REST backend for the vision + RAG pipeline |
+| UI | React/TypeScript diagnostics app, and a Streamlit visual-search app |
+| Equipped for | NVIDIA GPUs, CUDA, enterprise workloads |
 
 Designed for digital factories, predictive maintenance teams, and AI-augmented manufacturing support systems.
 
 ---
 
-##  Key Features
+## Key Features
 
- **GPU-accelerated training & inference** (TensorFlow-GPU, FAISS-GPU)  
- **Image fault classification + similar-image retrieval**  
- **PDF fault manual ingestion** → **vector store**  
- **LLM-powered fault explanation & root-cause reasoning**  
- **Production-style modular codebase**  
- **Supports enterprise AI deployment workflow**
+- **GPU-accelerated training & inference** (TensorFlow-GPU, FAISS-GPU)
+- **Image fault classification + similar-image retrieval**
+- **PDF fault manual ingestion** → **vector store**
+- **LLM-powered fault explanation & root-cause reasoning**
+- **FastAPI REST backend** in front of the vision + RAG pipeline
+- **React/TypeScript frontend** for interactive diagnosis
+- **Production-style modular codebase**
 
 ---
 
-##  High-Level Architecture
+## High-Level Architecture
 
 ```mermaid
-
 flowchart TD
 
-A[Upload Part Image] --> B[GPU Preprocessing]
-B --> C[VGG16 CNN Embedding Extraction]
-C --> D[FAISS-GPU Similarity Search]
-D --> E[Similar Historical Fault Images + Metadata]
+A[Upload Part Image] --> B[React/TypeScript frontend]
+B -->|multipart upload| C[FastAPI backend]
+C --> D[VGG16 CNN Embedding Extraction]
+D --> E[FAISS Similarity Search]
+E --> F[Similar Historical Fault Images + Metadata]
+E --> G[RandomForest Fault Classifier]
 
-E --> F[PDF Fault Manuals Vector Store]
-F --> G[LLM RAG Engine]
-G --> H[Root Cause + Mitigation Plan + Steps]
+F --> H[PDF Fault Manuals Vector Store]
+H --> I[Sentence-Transformer Passage Retrieval]
+I --> J["(Optional) LLM Synthesis"]
 
-
+G --> K[Diagnosis Response]
+I --> K
+J --> K
+K --> B
 ```
 
-**(Optional) Set `OPENAI_API_KEY` env var to enable LLM synthesis for summarized remediation steps.**
+**(Optional) Set the `OPENAI_API_KEY` environment variable on the API server** to enable LLM synthesis of summarized remediation steps. Without it, `/api/diagnose` still returns the classifier prediction, similar historical images, and retrieved maintenance passages — just without the LLM-written summary paragraph.
 
+### Repository structure
 
-### Repository Structure
-
-```python
-enterprise-image-fault-diagnosis-rag-gpu/
-│
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   ├── faiss_index/
-│   └── fault_reports/
-│       ├── pdfs/
-│       └── vector_store/
-│
+```
+.
+├── api/                        # FastAPI backend (see api/README.md)
+│   ├── main.py                 #   /api/health, /api/search, /api/diagnose
+│   ├── models.py                #   loads + caches VGG16/FAISS/sentence-transformer once at startup
+│   └── schemas.py               #   Pydantic response models
+├── frontend/                   # React + TypeScript app (see frontend/README.md)
+│   └── src/
+├── app/
+│   └── streamlit_visual_search.py   # original Streamlit visual-search UI (still works)
 ├── src/
 │   ├── config.py
-│   ├── extract_embeddings.py
-│   ├── train_classifier.py
-│   ├── build_faiss_index.py
-│   ├── query_similar_images.py
-│   ├── pdf_ingest.py
-│   ├── rag_query.py
-│
-├── app/
-│   └── streamlit_visual_search.py
-
+│   ├── extract_embeddings.py    # image_dir -> VGG16 embeddings.npy + image_names.npy
+│   ├── build_faiss_index.py     # embeddings.npy -> index.faiss
+│   ├── ingest_pdfs.py           # data/docs/*.pdf -> faiss_text_index.faiss + passages
+│   ├── train_classifier.py      # embeddings.npy + labels.csv -> classifier.joblib
+│   ├── query_similar_images.py  # CLI: find similar images for a query image
+│   └── rag_query.py             # CLI + library: image -> labels -> docs -> passages -> (optional) LLM
+├── data/
+│   ├── raw/                    # sample fault images
+│   ├── docs/                   # sample maintenance PDFs
+│   ├── processed/              # labels.csv, doc_map.csv
+│   └── faiss_index/            # generated by the Quickstart below -- gitignored
+├── notebooks/                   # exploratory notebooks
+├── requirements.txt              # CPU-friendly by default
+├── requirements-gpu.txt          # optional GPU acceleration (faiss-gpu, cuDNN)
+└── Dockerfile.gpu                # example CUDA-enabled container
 ```
 
 ---
 
-## Quickstart (GPU Required)
-#### <ins>Install NVIDIA drivers + CUDA</ins>
+## Quickstart
 
-```python
-sudo apt install nvidia-driver-530 nvidia-cuda-toolkit
-```
+### 1. Install Python dependencies
 
-#### <ins>Install Python deps</ins>
-```python
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-#### <ins>Train + Build Index + Build PDF Vector Store</ins>
+This installs a CPU build of TensorFlow and FAISS, so the whole pipeline
+runs without a GPU. For GPU acceleration, see [GPU setup](#gpu-setup) below.
 
-```python
-python src/train_classifier.py
-python src/extract_embeddings.py
-python src/build_faiss_index.py
-python src/pdf_ingest.py
+### 2. Build the embeddings, image index, text index, and classifier
+
+Run these **in order** — each one depends on the previous step's output:
+
+```bash
+python -m src.extract_embeddings   # data/raw/*.jpg -> embeddings.npy, image_names.npy
+python -m src.build_faiss_index    # embeddings.npy -> index.faiss
+python -m src.ingest_pdfs          # data/docs/*.pdf -> faiss_text_index.faiss + passages
+python -m src.train_classifier     # embeddings.npy + labels.csv -> classifier.joblib
 ```
 
-#### <ins>Run Streamlit App</ins>
-```python
+(Run as `python -m src.<name>`, not `python src/<name>.py` — the scripts
+import sibling modules as `src.config` etc., which only resolves correctly
+when Python is invoked as a module from the repo root.)
+
+### 3. Run it
+
+**Option A — REST API + React/TypeScript frontend (recommended):**
+
+```bash
+# Terminal 1
+uvicorn api.main:app --reload --port 8000
+
+# Terminal 2
+cd frontend
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (typically http://localhost:5173). Upload a fault
+image from `data/raw/` and either run **Visual Search** (find similar
+historical faults) or **AI Diagnosis** (classifier prediction + similar
+faults + retrieved remediation passages + optional LLM synthesis). See
+[`api/README.md`](api/README.md) and [`frontend/README.md`](frontend/README.md)
+for endpoint details and configuration.
+
+**Option B — original Streamlit visual-search app:**
+
+```bash
 streamlit run app/streamlit_visual_search.py
 ```
 
+### GPU setup
+
+```bash
+sudo apt install nvidia-driver-530 nvidia-cuda-toolkit
+pip install -r requirements.txt
+pip uninstall faiss-cpu
+pip install -r requirements-gpu.txt
+```
+
+`faiss-cpu` and `faiss-gpu` both install the same `faiss` module, so install
+the GPU one *instead of*, not alongside, the CPU one. See
+[`Dockerfile.gpu`](Dockerfile.gpu) for a full containerized CUDA environment.
+
 ---
 
-##  Enterprise Use-Cases
+## Enterprise Use-Cases
 
 | Industry | Use Case |
 |----------|----------|
@@ -132,42 +182,37 @@ streamlit run app/streamlit_visual_search.py
 ---
 
 ## Roadmap
+
 | Feature | Status |
 |---------|--------|
-|  CNN Fault Classifier | Done |
-|  FAISS-GPU Similarity Search | Done |
-|  PDF Fault Ingest + Embeddings | Done |
-|  RAG Query System | Done |
-|  REST API / FastAPI microservice | Planned |
-|  Helm + EKS GPU deployment | Planned |
-|  YOLO defect localization | Planned |
+| CNN Fault Classifier | Done |
+| FAISS-GPU Similarity Search | Done |
+| PDF Fault Ingest + Embeddings | Done |
+| RAG Query System | Done |
+| REST API / FastAPI microservice | Done |
+| React/TypeScript frontend | Done |
+| Helm + EKS GPU deployment | Planned |
+| YOLO defect localization | Planned |
 
 ---
 
 ## Summary
 
-#### This repository demonstrates a real-world enterprise AI system combining:
+This repository demonstrates a real-world enterprise AI system combining:
 
 - Computer vision defect detection
-
 - GPU-accelerated similarity search
-
 - PDF maintenance manual intelligence
-
 - RAG + LLM technician assistant
-- 
+- A FastAPI backend and React/TypeScript frontend for interactive use
 
 <ins>Perfect for</ins>:
 
 - Manufacturing AI innovation teams
-
 - Maintenance automation & smart factory projects
-
 - Industrial ML upskilling & PoC deployments
 
 ---
-
-
 
 Thank you for reading
 
@@ -190,9 +235,3 @@ Github:  https://github.com/manuelbomi
 
 ```
 [![Icons](https://skillicons.dev/icons?i=aws,azure,gcp,scala,mongodb,redis,cassandra,kafka,anaconda,matlab,nodejs,django,py,c,anaconda,git,github,mysql,docker,kubernetes&theme=dark)](https://skillicons.dev)
-
-
-
-
-
-

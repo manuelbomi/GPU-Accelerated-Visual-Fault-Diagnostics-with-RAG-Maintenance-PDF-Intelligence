@@ -31,21 +31,38 @@ def retrieve_documents_for_labels(labels, doc_map_csv='data/processed/doc_map.cs
 def query_text_index(text_index, passages, model, query_text, top_k=3):
     q_emb = model.encode([query_text], convert_to_numpy=True).astype('float32')
     faiss.normalize_L2(q_emb)
-    dists, inds = text_index.search(q_emb, top_k)
+    # top_k is capped at the passage count: FAISS pads any extra slots with
+    # index -1, which Python would silently resolve to passages[-1] (the
+    # LAST passage, not "no match") if not filtered out here.
+    dists, inds = text_index.search(q_emb, min(top_k, len(passages)))
     results = []
     for dist, idx in zip(dists[0], inds[0]):
+        if idx < 0:
+            continue
         results.append((passages[idx], float(dist)))
     return results
 
-def rag_query(image_path, top_k_text=3, image_index_path='data/faiss_index/index.faiss', text_index_path='data/faiss_index/faiss_text_index.faiss'):
+def rag_query(image_path, top_k_text=3, image_index_path='data/faiss_index/index.faiss',
+              text_index_path='data/faiss_index/faiss_text_index.faiss',
+              img_model=None, img_index=None, image_names=None,
+              text_index=None, passages=None, metadata=None, text_model=None):
+    """Run the image -> labels -> docs -> passages -> (optional) LLM pipeline.
+
+    Every model/index argument is optional and, left as None, is loaded
+    fresh exactly as before (this is what the CLI entry point below does).
+    A caller that already has these loaded -- the REST API in api/, which
+    serves many requests and can't afford to reload VGG16 and MiniLM on
+    every one -- passes them in instead. See api/models.py.
+    """
     # 1) image retrieval
-    img_model = load_model()
+    img_model = img_model or load_model()
     qvec = extract_feature(img_model, image_path)
-    img_index = load_faiss(image_index_path)
+    img_index = img_index if img_index is not None else load_faiss(image_index_path)
     faiss.normalize_L2(qvec)
     dists, inds = img_index.search(qvec, 6)  # get top 6 images
-    names = np.load('data/faiss_index/image_names.npy', allow_pickle=True)
-    top_image_names = [names[i] for i in inds[0] if i>=0][:5]
+    if image_names is None:
+        image_names = np.load('data/faiss_index/image_names.npy', allow_pickle=True)
+    top_image_names = [image_names[i] for i in inds[0] if i>=0][:5]
 
     # 2) infer labels from nearby labeled set (requires labels.csv)
     labels = []
@@ -62,12 +79,12 @@ def rag_query(image_path, top_k_text=3, image_index_path='data/faiss_index/index
     docs = retrieve_documents_for_labels(labels)
 
     # 4) load text index and passages
-    text_index_path = Path(text_index_path)
-    if not text_index_path.exists():
-        raise FileNotFoundError('Text FAISS index not found. Run src/ingest_pdfs.py first.')
-
-    text_index, passages, metadata = load_text_index(text_index_path, 'data/faiss_index/text_passages.npy', 'data/faiss_index/text_metadata.json')
-    text_model = SentenceTransformer('all-MiniLM-L6-v2')
+    if text_index is None or passages is None or metadata is None:
+        text_index_path = Path(text_index_path)
+        if not text_index_path.exists():
+            raise FileNotFoundError('Text FAISS index not found. Run src/ingest_pdfs.py first.')
+        text_index, passages, metadata = load_text_index(text_index_path, 'data/faiss_index/text_passages.npy', 'data/faiss_index/text_metadata.json')
+    text_model = text_model or SentenceTransformer('all-MiniLM-L6-v2')
 
     # 5) build a query_text from labels and top image names
     query_text = ' '.join(labels + top_image_names)
@@ -78,19 +95,20 @@ def rag_query(image_path, top_k_text=3, image_index_path='data/faiss_index/index
     openai_key = os.environ.get('OPENAI_API_KEY')
     if openai_key:
         try:
-            import openai
-            openai.api_key = openai_key
+            from openai import OpenAI
+            client = OpenAI(api_key=openai_key)
             prompt = f"Given the following retrieved passages, summarize recommended remediation steps for the fault query: {query_text}\n\nPassages:\n"
             for p, s in results:
                 prompt += f"- {p}\n"
-            resp = openai.ChatCompletion.create(model='gpt-4o-mini', messages=[{'role':'user','content':prompt}], temperature=0.0, max_tokens=400)
-            synthesis = resp['choices'][0]['message']['content']
+            resp = client.chat.completions.create(model='gpt-4o-mini', messages=[{'role':'user','content':prompt}], temperature=0.0, max_tokens=400)
+            synthesis = resp.choices[0].message.content
         except Exception as e:
             synthesis = f'LLM synthesis failed or OpenAI not configured: {e}'
 
     return {
         'query_text': query_text,
         'top_images': top_image_names,
+        'docs': docs,
         'retrieved_passages': results,
         'synthesis': synthesis
     }
